@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrueText — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-logo">T</span>
+        <span class="brand-word">TrueText</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button id="tab-detector" class="nav-link active">
+          <span class="nav-icon">◆</span> Detector
+        </button>
+        <button id="tab-instructor" class="nav-link">
+          <span class="nav-icon">◈</span> Instructor Mode
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="theme-toggle" class="icon-btn" title="Toggle theme">🌙</button>
+        <div class="sidebar-user">
+          <div id="hello-user" class="hello"></div>
+          <button id="logout-btn">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- ================= DETECTOR VIEW ================= -->
+      <div id="view-detector" class="view">
+        <div class="view-header">
+          <h1>Detector</h1>
+          <p class="hint">Paste text or upload a document to check whether it was AI-generated or human-written.</p>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card glass"><div class="stat-icon">◆</div><div><div class="stat-label">Total Scans</div><div id="stat-total" class="stat-value">–</div></div></div>
+          <div class="stat-card glass"><div class="stat-icon">◈</div><div><div class="stat-label">Average AI Score</div><div id="stat-avg" class="stat-value">–</div></div></div>
+          <div class="stat-card glass"><div class="stat-icon">◉</div><div><div class="stat-label">Last Verdict</div><div id="stat-last" class="stat-value">–</div></div></div>
+        </div>
+
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>New Detection</h2>
+            <label class="switch-label">
+              <span>Live check</span>
+              <span class="switch">
+                <input type="checkbox" id="live-toggle">
+                <span class="slider"></span>
+              </span>
+            </label>
+          </div>
+
+          <textarea id="input-text" rows="7" placeholder="Paste or type text here (minimum 5 words)..."></textarea>
+          <div class="textarea-footer">
+            <span id="word-count" class="hint">0 words</span>
+            <span id="live-status" class="hint hidden">● analyzing…</span>
+          </div>
+          <button id="detect-btn">Run Detection</button>
+          <p id="detect-error" class="error"></p>
+
+          <div class="divider"><span>or upload a file</span></div>
+
+          <div id="single-dropzone" class="dropzone dropzone-compact">
+            Drag & drop a .pdf, .docx, or .txt file here, or click to choose one
+            <input type="file" id="single-file-input" accept=".pdf,.docx,.txt" class="hidden">
+          </div>
+          <div id="single-file-name" class="hint" style="margin-top:6px;"></div>
+          <p id="file-detect-error" class="error"></p>
+        </div>
+
+        <div id="result-panel" class="panel glass hidden">
+          <h2>Result</h2>
+          <div class="result-top">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 160 160" class="ring-svg">
+                <circle cx="80" cy="80" r="70" class="ring-bg"></circle>
+                <circle cx="80" cy="80" r="70" class="ring-fg" id="ring-fg"></circle>
+              </svg>
+              <div class="ring-center">
+                <div id="ring-percent" class="ring-percent">0%</div>
+                <div class="ring-sub">AI likelihood</div>
+              </div>
+            </div>
+            <div class="verdict-box">
+              <div id="verdict-badge" class="verdict-badge">—</div>
+              <div class="prob-line">AI Probability: <b id="ai-prob">–</b></div>
+              <div class="prob-line">Human Probability: <b id="human-prob">–</b></div>
+              <button id="download-pdf-btn">Download PDF Report</button>
+            </div>
+          </div>
+
+          <h3>Explainability — LIME Word Contributions</h3>
+          <p class="hint">Each bar is an actual LIME weight: how much that word pushed the prediction toward AI or Human. This is the model's real local explanation, not a summary statistic.</p>
+          <div id="lime-bars" class="lime-bars"></div>
+
+          <h3>Highlighted Text</h3>
+          <p class="hint">Same LIME weights, shown in context. Terracotta = pushes toward AI, sage green = pushes toward Human.</p>
+          <div id="inline-highlight" class="inline-highlight"></div>
+
+          <h3>Style Signals <span class="hint">(extracted stylometric features — not LIME output)</span></h3>
+          <p class="hint">Raw measurements the classifier also uses as input: sentence-length uniformity, contraction rate, vocabulary richness, and similar. These are feature values, not word-level explanations.</p>
+          <div id="style-stats" class="style-grid"></div>
+        </div>
+
+        <div class="panel glass">
+          <h2>History</h2>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <!-- ================= INSTRUCTOR VIEW ================= -->
+      <div id="view-instructor" class="view hidden">
+        <div class="view-header">
+          <h1>Instructor Mode</h1>
+          <p class="hint">Batch-check multiple submissions at once and screen them for cross-copying.</p>
+        </div>
+
+        <div class="panel glass">
+          <h2>Batch Check Submissions</h2>
+          <p class="hint">Upload multiple .txt files at once (e.g. one per student) and get a sortable, flaggable class report.</p>
+
+          <div id="dropzone" class="dropzone">
+            Drag & drop .txt files here, or click to choose files
+            <input type="file" id="file-input" accept=".txt" multiple class="hidden">
+          </div>
+          <div id="file-list" class="hint" style="margin-top:8px;"></div>
+
+          <div class="threshold-row">
+            <span>Flag if AI% ≥</span>
+            <input type="range" id="threshold-slider" min="10" max="100" value="70">
+            <b id="threshold-value">70%</b>
+          </div>
+          <div class="threshold-row">
+            <span>Flag similarity ≥</span>
+            <input type="range" id="sim-threshold-slider" min="20" max="100" value="60">
+            <b id="sim-threshold-value">60%</b>
+          </div>
+
+          <button id="batch-btn">Analyze All</button>
+          <p id="batch-error" class="error"></p>
+        </div>
+
+        <div id="batch-result-panel" class="panel glass hidden">
+          <h2>Class Report</h2>
+          <div class="batch-summary">
+            <div class="chip"><b id="batch-total">0</b>Submissions</div>
+            <div class="chip"><b id="batch-avg">0%</b>Class Average AI Score</div>
+            <div class="chip"><b id="batch-flagged">0</b>Flagged (AI)</div>
+            <button id="export-csv-btn">Export CSV</button>
+          </div>
+          <table class="batch-table">
+            <thead>
+              <tr>
+                <th data-key="filename">Student / File ⇅</th>
+                <th data-key="word_count">Words ⇅</th>
+                <th data-key="ai_probability">AI % ⇅</th>
+                <th data-key="label">Verdict ⇅</th>
+              </tr>
+            </thead>
+            <tbody id="batch-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="plagiarism-panel" class="panel glass hidden">
+          <h2>Plagiarism / Similarity Check</h2>
+          <p class="hint">Independent of the AI detector — compares every pair of submissions to each other for overlapping text/wording.</p>
+          <div id="plagiarism-empty" class="hint hidden">No pairs above the similarity threshold. Nothing suspicious found.</div>
+          <table class="batch-table" id="plagiarism-table-wrap">
+            <thead>
+              <tr><th>File A</th><th>File B</th><th>Similarity</th></tr>
+            </thead>
+            <tbody id="plagiarism-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+flask
+flask-cors
+bcrypt
+pyjwt
+scikit-learn
+lime
+joblib
+reportlab
+pandas
+pdfplumber
+python-docx
